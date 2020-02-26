@@ -1,6 +1,6 @@
 import os
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]='5'
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]='0,1,2,3'
 import sys
 import argparse
 import numpy as np
@@ -33,15 +33,14 @@ def main(mode, num_epochs, batch_size, lr, save_prefix):
     print('prepare optimizer...')
     optimizer, scheduler = create_optimizer(model, lr)
 
-    writer = SummaryWriter()
+    writer = SummaryWriter('mgpu')
 
     print('start training...')
     train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, writer)
 
     writer.close()
 
-
-def create_dataloaders(mode, batch_size=4, num_workers=1):
+def create_dataloaders(mode, batch_size=4, num_workers=4):
     train_transforms = transforms.Compose([videotransforms.RandomCrop(224),
                                            videotransforms.RandomHorizontalFlip()])
     test_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
@@ -173,4 +172,4 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
 
 
 if __name__ == '__main__':
-    main(mode='rgb', num_epochs=70, batch_size=1, lr=0.001, save_prefix='output/sthsth')
+    main(mode='rgb', num_epochs=70, batch_size=4, lr=0.001, save_prefix='output/sthsth_4gpu')
