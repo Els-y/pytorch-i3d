@@ -1,6 +1,4 @@
 import os
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]='5'
 import sys
 import argparse
 import time
@@ -26,7 +24,7 @@ from sthsth_dataset import SthSthDataset
 from utils import topk_corrects
 
 
-def main(mode, num_epochs, batch_size, lr, pretrained, output_dir, save_prefix):
+def main(mode, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, save_prefix):
     weight_storage = os.path.join(output_dir, 'weights')
     log_storage = os.path.join(output_dir, 'logs')
     code_storage = os.path.join(output_dir, 'codes')
@@ -38,7 +36,7 @@ def main(mode, num_epochs, batch_size, lr, pretrained, output_dir, save_prefix):
         shutil.copy2(name, code_storage)
 
     print('prepare dataset...')
-    dataloaders = create_dataloaders(mode, batch_size=batch_size)
+    dataloaders = create_dataloaders(mode, batch_size=batch_size, num_workers=num_workers)
 
     print('load model...')
     model = create_model(mode, pretrained)
@@ -187,13 +185,33 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
 
         torch.save(model.state_dict(), '{}_{}.pt'.format(save_prefix, epoch))
 
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Unsupported value encountered.')
 
 if __name__ == '__main__':
-    main(mode='rgb',
-         num_epochs=70,
-         batch_size=1,
-         lr=0.001,
-         pretrained=True,
-         output_dir='output/sthsth_{}'.format(time.strftime('%m-%d_%H:%M:%S')),
-         save_prefix='sthsth')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, default='rgb', choices=['rgb'], help='mode')
+    parser.add_argument('--epoch', type=int, default=70, help='num of epoch')
+    parser.add_argument('--batch', type=int, default=1, help='num of batch')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('--pretrained', type=str2bool, default=True, help='if use pretrained model')
+    parser.add_argument('--worker', type=int, default=1, help='num of workers')
+    parser.add_argument('--output', type=str, default='output/sthsth_{}'.format(time.strftime('%m-%d_%H:%M:%S')), help='output dir')
+    parser.add_argument('--prefix', type=str, default='sthsth')
+    args = parser.parse_args()
+    print(args)
+
+    main(mode=args.mode,
+         num_epochs=args.epoch,
+         batch_size=args.batch,
+         lr=args.lr,
+         pretrained=args.pretrained,
+         num_workers=args.worker,
+         output_dir=args.output,
+         save_prefix=args.prefix)
 

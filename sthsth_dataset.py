@@ -101,3 +101,29 @@ class SthSthDataset(data_util.Dataset):
 
     def __len__(self):
         return len(self.data)
+
+
+if __name__ == '__main__':
+    import videotransforms
+    from torchvision import transforms
+
+    # tfs = transforms.Compose([videotransforms.RandomCrop(224),
+    #                          videotransforms.RandomHorizontalFlip()])
+    tfs = transforms.Compose([videotransforms.CenterCrop(224)])
+    dataset = SthSthDataset(phase='val',
+                            split_file='/data3/yejiaquan/data/sthsth/label/something-something-v2-validation.json',
+                            label_file='/data3/yejiaquan/data/sthsth/label/something-something-v2-labels.json',
+                            webm_dir='/data3/yejiaquan/data/sthsth/20bn-something-something-v2',
+                            mode='rgb',
+                            transforms=tfs)
+
+    for i in range(5):
+        inputs, label = dataset[i]
+        inputs = inputs.numpy().transpose([1, 2, 3, 0])
+        inputs = (inputs + 1) / 2 * 255.0
+        inputs = inputs.astype(np.uint8)
+        inputs = inputs[:, :, :, [2, 1, 0]]
+        folder = 'center/{}'.format(i)
+        os.makedirs(folder, exist_ok=True)
+        for j in range(64):
+            cv2.imwrite(os.path.join(folder, '{}.jpg'.format(j)), inputs[j])
