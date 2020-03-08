@@ -31,7 +31,7 @@ def main(mode, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, 
     os.makedirs(weight_storage, exist_ok=True)
     os.makedirs(log_storage, exist_ok=True)
     os.makedirs(code_storage, exist_ok=True)
-    backup_files = ['sthsth_dataset.py', 'train_i3d.py']
+    backup_files = ['sthsth_dataset.py', 'train_i3d.py', 'pytorch_i3d.py']
     for name in backup_files:
         shutil.copy2(name, code_storage)
 
@@ -93,7 +93,7 @@ def create_model(mode, pretrained=True, num_classes=174):
 
 
 def create_optimizer(model, lr, momentum=0.9):
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=0.0001)
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=0.0000001)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [20, 50])
     return optimizer, scheduler
 
@@ -198,7 +198,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='rgb', choices=['rgb'], help='mode')
     parser.add_argument('--epoch', type=int, default=70, help='num of epoch')
     parser.add_argument('--batch', type=int, default=1, help='num of batch')
-    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.00125, help='learning rate')
     parser.add_argument('--pretrained', type=str2bool, default=True, help='if use pretrained model')
     parser.add_argument('--worker', type=int, default=1, help='num of workers')
     parser.add_argument('--output', type=str, default='output/sthsth_{}'.format(time.strftime('%m-%d_%H:%M:%S')), help='output dir')
