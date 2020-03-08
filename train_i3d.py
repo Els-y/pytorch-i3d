@@ -3,6 +3,9 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"]='5'
 import sys
 import argparse
+import time
+import shutil
+
 import numpy as np
 
 import torch
@@ -23,20 +26,31 @@ from sthsth_dataset import SthSthDataset
 from utils import topk_corrects
 
 
-def main(mode, num_epochs, batch_size, lr, save_prefix):
+def main(mode, num_epochs, batch_size, lr, pretrained, output_dir, save_prefix):
+    weight_storage = os.path.join(output_dir, 'weights')
+    log_storage = os.path.join(output_dir, 'logs')
+    code_storage = os.path.join(output_dir, 'codes')
+    os.makedirs(weight_storage, exist_ok=True)
+    os.makedirs(log_storage, exist_ok=True)
+    os.makedirs(code_storage, exist_ok=True)
+    backup_files = ['sthsth_dataset.py', 'train_i3d.py']
+    for name in backup_files:
+        shutil.copy2(name, code_storage)
+
     print('prepare dataset...')
     dataloaders = create_dataloaders(mode, batch_size=batch_size)
 
     print('load model...')
-    model = create_model(mode)
+    model = create_model(mode, pretrained)
 
     print('prepare optimizer...')
     optimizer, scheduler = create_optimizer(model, lr)
 
-    writer = SummaryWriter()
+    writer = SummaryWriter(log_storage)
 
     print('start training...')
-    train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, writer)
+    train(num_epochs, model, dataloaders, optimizer, scheduler,
+          os.path.join(weight_storage, save_prefix), writer)
 
     writer.close()
 
@@ -65,13 +79,15 @@ def create_dataloaders(mode, batch_size=4, num_workers=1):
     return dataloaders
 
 
-def create_model(mode, num_classes=174):
+def create_model(mode, pretrained=True, num_classes=174):
     if mode == 'flow':
         i3d = InceptionI3d(400, in_channels=2)
-        i3d.load_state_dict(torch.load('models/flow_imagenet.pt'))
+        if pretrained:
+            i3d.load_state_dict(torch.load('models/flow_imagenet.pt'))
     else:
         i3d = InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
+        if pretrained:
+            i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
     i3d.replace_logits(num_classes)
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
@@ -173,4 +189,11 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
 
 
 if __name__ == '__main__':
-    main(mode='rgb', num_epochs=70, batch_size=1, lr=0.001, save_prefix='output/sthsth')
+    main(mode='rgb',
+         num_epochs=70,
+         batch_size=1,
+         lr=0.001,
+         pretrained=True,
+         output_dir='output/sthsth_{}'.format(time.strftime('%m-%d_%H:%M:%S')),
+         save_prefix='sthsth')
+
