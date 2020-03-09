@@ -31,7 +31,7 @@ def main(mode, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, 
     os.makedirs(weight_storage, exist_ok=True)
     os.makedirs(log_storage, exist_ok=True)
     os.makedirs(code_storage, exist_ok=True)
-    backup_files = ['sthsth_dataset.py', 'train_i3d.py', 'pytorch_i3d.py']
+    backup_files = ['sthsth_dataset.py', 'train_i3d.py', 'pytorch_i3d.py', 'utils.py']
     for name in backup_files:
         shutil.copy2(name, code_storage)
 
@@ -131,12 +131,12 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
 
                 # wrap them in Variable
                 inputs = Variable(inputs.cuda())  # (B x C x T x H x W)
-                labels = Variable(labels.cuda())  # (B x 174)
+                labels = Variable(labels.cuda())  # (B x C), C = 174
 
                 optimizer.zero_grad()
 
                 logits = model(inputs)
-                loss = F.binary_cross_entropy_with_logits(logits, labels)
+                loss = F.cross_entropy(logits, labels)
 
                 # _, preds = torch.max(logits.cpu().data, 1)
                 # _, gt = torch.max(labels.cpu().data, 1)
@@ -185,6 +185,7 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
 
         torch.save(model.state_dict(), '{}_{}.pt'.format(save_prefix, epoch))
 
+
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
@@ -193,14 +194,15 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Unsupported value encountered.')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', type=str, default='rgb', choices=['rgb'], help='mode')
     parser.add_argument('--epoch', type=int, default=70, help='num of epoch')
-    parser.add_argument('--batch', type=int, default=1, help='num of batch')
+    parser.add_argument('--batch', type=int, default=4, help='num of batch')
     parser.add_argument('--lr', type=float, default=0.00125, help='learning rate')
     parser.add_argument('--pretrained', type=str2bool, default=True, help='if use pretrained model')
-    parser.add_argument('--worker', type=int, default=1, help='num of workers')
+    parser.add_argument('--worker', type=int, default=4, help='num of workers')
     parser.add_argument('--output', type=str, default='output/sthsth_{}'.format(time.strftime('%m-%d_%H:%M:%S')), help='output dir')
     parser.add_argument('--prefix', type=str, default='sthsth')
     args = parser.parse_args()

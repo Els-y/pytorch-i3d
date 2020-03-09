@@ -50,9 +50,9 @@ class SthSthDataset(data_util.Dataset):
         self.min_side = 256
         assert phase in ['train', 'val', 'test']
         if phase == 'train':
-            self.data = load_json(self.split_file)[:10000]
+            self.data = load_json(self.split_file)
         else:
-            self.data = load_json(self.split_file)[:1000]
+            self.data = load_json(self.split_file)
         self.label_map = load_json(self.label_file)
 
     def get_rgb_frames(self, index):
@@ -85,10 +85,8 @@ class SthSthDataset(data_util.Dataset):
 
         template = self.data[index]['template'].replace('[', '').replace(']', '')
         label = int(self.label_map[template])
-        label_one_hot = np.zeros(self.class_num, dtype=np.float32)
-        label_one_hot[label] = 1
 
-        return label_one_hot
+        return label
 
     def __getitem__(self, index):
         label = self.get_label(index)
@@ -97,7 +95,7 @@ class SthSthDataset(data_util.Dataset):
         if self.transforms is not None:
             rgb_inputs = self.transforms(rgb_inputs)
 
-        return video_to_tensor(rgb_inputs), torch.from_numpy(label)
+        return video_to_tensor(rgb_inputs), label
 
     def __len__(self):
         return len(self.data)
