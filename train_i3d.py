@@ -94,7 +94,7 @@ def create_model(mode, pretrained=True, num_classes=174):
 
 def create_optimizer(model, lr, momentum=0.9):
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=0.0000001)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [20, 50])
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [70])
     return optimizer, scheduler
 
 
@@ -172,8 +172,6 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
             progress_bar['epoch'].set_postfix(epoch_disp)
 
             writer.add_scalar('{}/loss'.format(phase), loss.data[0], epoch)
-            writer.add_scalar('{}/correct/top1'.format(phase), running_corrects[0], epoch)
-            writer.add_scalar('{}/correct/top5'.format(phase), running_corrects[1], epoch)
             writer.add_scalar('{}/acc/top1'.format(phase), epoch_acc[0], epoch)
             writer.add_scalar('{}/acc/top5'.format(phase), epoch_acc[1], epoch)
             writer.add_scalar('{}/size'.format(phase), len(dataloaders[phase].dataset))

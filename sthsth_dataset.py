@@ -46,13 +46,13 @@ class SthSthDataset(data_util.Dataset):
         self.webm_dir = webm_dir
         self.transforms = transforms
         self.class_num = 174
-        self.frame_num = 64
-        self.min_side = 256
+        self.frame_num = 32
+        self.min_side_scope = [256, 320]
         assert phase in ['train', 'val', 'test']
         if phase == 'train':
-            self.data = load_json(self.split_file)
+            self.data = load_json(self.split_file)[:10000]
         else:
-            self.data = load_json(self.split_file)
+            self.data = load_json(self.split_file)[:1000]
         self.label_map = load_json(self.label_file)
 
     def get_rgb_frames(self, index):
@@ -61,8 +61,12 @@ class SthSthDataset(data_util.Dataset):
         webm = cv2.VideoCapture(webm_file)
         assert webm.isOpened()
 
+        min_side = random.randint(*self.min_side_scope)
+
         frames = []
         while True:
+            # transform 12fps to 6fps
+            ok, frame_bgr = webm.read()
             ok, frame_bgr = webm.read()
             if not ok:
                 if len(frames) >= self.frame_num:
@@ -70,7 +74,8 @@ class SthSthDataset(data_util.Dataset):
                 else:
                     webm.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     continue
-            frame_bgr = resize_smaller_side(frame_bgr, self.min_side)
+
+            frame_bgr = resize_smaller_side(frame_bgr, min_side)
             frame_rgb = frame_bgr[:, :, [2, 1, 0]]
             frame_rgb = (frame_rgb / 255.0) * 2 - 1
             frames.append(frame_rgb.astype(np.float32))
@@ -117,11 +122,11 @@ if __name__ == '__main__':
 
     for i in range(5):
         inputs, label = dataset[i]
-        inputs = inputs.numpy().transpose([1, 2, 3, 0])
-        inputs = (inputs + 1) / 2 * 255.0
-        inputs = inputs.astype(np.uint8)
-        inputs = inputs[:, :, :, [2, 1, 0]]
-        folder = 'center/{}'.format(i)
-        os.makedirs(folder, exist_ok=True)
-        for j in range(64):
-            cv2.imwrite(os.path.join(folder, '{}.jpg'.format(j)), inputs[j])
+        # inputs = inputs.numpy().transpose([1, 2, 3, 0])
+        # inputs = (inputs + 1) / 2 * 255.0
+        # inputs = inputs.astype(np.uint8)
+        # inputs = inputs[:, :, :, [2, 1, 0]]
+        # folder = 'center/{}'.format(i)
+        # os.makedirs(folder, exist_ok=True)
+        # for j in range(32):
+        #     cv2.imwrite(os.path.join(folder, '{}.jpg'.format(j)), inputs[j])
