@@ -4,9 +4,10 @@
 
 ## 环境
 
-- Python 3.x
-- PyTorch 0.3
+- python 3.x
+- pytorch 0.3
 - numpy
+- opencv
 - tensorboardX
 - tqdm
 

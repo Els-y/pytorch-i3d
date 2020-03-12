@@ -50,9 +50,9 @@ class SthSthDataset(data_util.Dataset):
         self.min_side_scope = [256, 320]
         assert phase in ['train', 'val', 'test']
         if phase == 'train':
-            self.data = load_json(self.split_file)[:10000]
+            self.data = load_json(self.split_file)
         else:
-            self.data = load_json(self.split_file)[:1000]
+            self.data = load_json(self.split_file)
         self.label_map = load_json(self.label_file)
 
     def get_rgb_frames(self, index):
