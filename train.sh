@@ -11,9 +11,10 @@ mkdir -p $BACKUP_DIR
 cp $0 $OUTPUT_DIR
 cp *.py $BACKUP_DIR
 
-python train_i3d.py --epoch 80 \
+python train_i3d.py --net resnet50 \
+                    --epoch 80 \
                     --batch 8 \
-                    --lr 0.00125 \
+                    --lr 0.01 \
                     --pretrained true \
                     --worker 8 \
                     --output $OUTPUT_DIR

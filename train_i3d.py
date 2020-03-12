@@ -19,12 +19,13 @@ from tensorboardX import SummaryWriter
 
 import videotransforms
 from pytorch_i3d import InceptionI3d
+from resnet3d import resnet50
 
 from sthsth_dataset import SthSthDataset
 from utils import topk_corrects
 
 
-def main(mode, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, save_prefix):
+def main(mode, net, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, save_prefix):
     weight_storage = os.path.join(output_dir, 'weights')
     log_storage = os.path.join(output_dir, 'logs')
     os.makedirs(weight_storage, exist_ok=True)
@@ -37,7 +38,7 @@ def main(mode, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, 
         len(dataloaders['val'].dataset), len(dataloaders['val'])))
 
     print('load model...')
-    model = create_model(mode, pretrained)
+    model = create_model(mode, net, pretrained)
 
     print('prepare optimizer...')
     optimizer, scheduler = create_optimizer(model, lr)
@@ -75,15 +76,22 @@ def create_dataloaders(mode, batch_size=4, num_workers=1):
     return dataloaders
 
 
-def create_model(mode, pretrained=True, num_classes=174):
+def create_model(mode, net, pretrained=True, num_classes=174):
     if mode == 'flow':
-        i3d = InceptionI3d(400, in_channels=2)
-        if pretrained:
-            i3d.load_state_dict(torch.load('models/flow_imagenet.pt'))
-    else:
+        raise ValueError('unsupported mode.')
+
+    # rgb mode
+    if net == 'inception':
         i3d = InceptionI3d(400, in_channels=3)
         if pretrained:
             i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
+    elif net == 'resnet50':
+        i3d = resnet50()
+        if pretrained:
+            i3d.load_state_dict(torch.load('models/resnet50_3d.pth'))
+    else:
+        raise ValueError('unknown net.')
+
     i3d.replace_logits(num_classes)
     i3d.cuda()
     i3d = nn.DataParallel(i3d)
@@ -200,6 +208,7 @@ def str2bool(v):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', type=str, default='rgb', choices=['rgb'], help='mode')
+    parser.add_argument('--net', type=str, default='resnet50', choices=['resnet50', 'inception'], help='net architecture')
     parser.add_argument('--epoch', type=int, default=80, help='num of epoch')
     parser.add_argument('--batch', type=int, default=4, help='num of batch')
     parser.add_argument('--lr', type=float, default=0.00125, help='learning rate')
@@ -211,6 +220,7 @@ if __name__ == '__main__':
     print(args)
 
     main(mode=args.mode,
+         net=args.net,
          num_epochs=args.epoch,
          batch_size=args.batch,
          lr=args.lr,
