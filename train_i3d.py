@@ -37,6 +37,9 @@ def main(mode, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, 
 
     print('prepare dataset...')
     dataloaders = create_dataloaders(mode, batch_size=batch_size, num_workers=num_workers)
+    print('train size: {}, train iter: {}, val size: {}, val iter: {}'.format(
+        len(dataloaders['train'].dataset), len(dataloaders['train']),
+        len(dataloaders['val'].dataset), len(dataloaders['val'])))
 
     print('load model...')
     model = create_model(mode, pretrained)
@@ -111,6 +114,7 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
         'tAcc@1,5': '{:.2f}%,{:.2f}%'.format(0., 0.),
         'vAcc@1,5': '{:.2f}%,{:.2f}%'.format(0., 0.),
     }
+    batch_x = {'train': 1, 'val': 1}
     for epoch in range(1, num_epochs + 1):
         progress_bar['epoch'].update()
         scheduler.step()
@@ -141,7 +145,7 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
                 # _, preds = torch.max(logits.cpu().data, 1)
                 # _, gt = torch.max(labels.cpu().data, 1)
 
-                running_loss += loss.data[0]
+                running_loss += loss.data[0] * inputs.size(0)
                 running_nums += inputs.size(0)
                 running_corrects += topk_corrects(logits.cpu().data, labels.cpu().data, topk)
                 # running_corrects += torch.sum(preds == gt)
@@ -161,6 +165,11 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
                 progress_bar['batch'].set_postfix(batch_disp)
                 progress_bar['batch'].update()
 
+                writer.add_scalar('{}/iter/loss'.format(phase), loss.data[0], batch_x[phase])
+                writer.add_scalar('{}/iter/running_acc/top1'.format(phase), running_acc[0], batch_x[phase])
+                writer.add_scalar('{}/iter/running_acc/top5'.format(phase), running_acc[1], batch_x[phase])
+                batch_x[phase] += 1
+
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects / len(dataloaders[phase].dataset)
             if phase == 'train':
@@ -171,7 +180,7 @@ def train(num_epochs, model, dataloaders, optimizer, scheduler, save_prefix, wri
                 epoch_disp['vAcc@1,5'] = '{:.1f}%,{:.1f}%'.format(100. * epoch_acc[0], 100. * epoch_acc[1])
             progress_bar['epoch'].set_postfix(epoch_disp)
 
-            writer.add_scalar('{}/loss'.format(phase), loss.data[0], epoch)
+            writer.add_scalar('{}/loss'.format(phase), epoch_loss, epoch)
             writer.add_scalar('{}/acc/top1'.format(phase), epoch_acc[0], epoch)
             writer.add_scalar('{}/acc/top5'.format(phase), epoch_acc[1], epoch)
             writer.add_scalar('{}/size'.format(phase), len(dataloaders[phase].dataset))
@@ -196,7 +205,7 @@ def str2bool(v):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', type=str, default='rgb', choices=['rgb'], help='mode')
-    parser.add_argument('--epoch', type=int, default=70, help='num of epoch')
+    parser.add_argument('--epoch', type=int, default=80, help='num of epoch')
     parser.add_argument('--batch', type=int, default=4, help='num of batch')
     parser.add_argument('--lr', type=float, default=0.00125, help='learning rate')
     parser.add_argument('--pretrained', type=str2bool, default=True, help='if use pretrained model')
