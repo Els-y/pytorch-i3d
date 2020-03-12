@@ -27,13 +27,8 @@ from utils import topk_corrects
 def main(mode, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, save_prefix):
     weight_storage = os.path.join(output_dir, 'weights')
     log_storage = os.path.join(output_dir, 'logs')
-    code_storage = os.path.join(output_dir, 'codes')
     os.makedirs(weight_storage, exist_ok=True)
     os.makedirs(log_storage, exist_ok=True)
-    os.makedirs(code_storage, exist_ok=True)
-    backup_files = ['sthsth_dataset.py', 'train_i3d.py', 'pytorch_i3d.py', 'utils.py']
-    for name in backup_files:
-        shutil.copy2(name, code_storage)
 
     print('prepare dataset...')
     dataloaders = create_dataloaders(mode, batch_size=batch_size, num_workers=num_workers)
