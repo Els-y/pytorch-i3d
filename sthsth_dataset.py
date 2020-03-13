@@ -40,6 +40,7 @@ class SthSthDataset(data_util.Dataset):
 
     def __init__(self, phase, split_file, label_file, webm_dir,
                  mode, transforms=None):
+        assert phase in ['train', 'val', 'test']
         self.phase = phase
         self.split_file = split_file
         self.label_file = label_file
@@ -48,11 +49,7 @@ class SthSthDataset(data_util.Dataset):
         self.class_num = 174
         self.frame_num = 32
         self.min_side_scope = [256, 320]
-        assert phase in ['train', 'val', 'test']
-        if phase == 'train':
-            self.data = load_json(self.split_file)
-        else:
-            self.data = load_json(self.split_file)
+        self.data = load_json(self.split_file)
         self.label_map = load_json(self.label_file)
 
     def get_rgb_frames(self, index):
@@ -120,13 +117,21 @@ if __name__ == '__main__':
                             mode='rgb',
                             transforms=tfs)
 
-    for i in range(5):
-        inputs, label = dataset[i]
-        # inputs = inputs.numpy().transpose([1, 2, 3, 0])
-        # inputs = (inputs + 1) / 2 * 255.0
-        # inputs = inputs.astype(np.uint8)
-        # inputs = inputs[:, :, :, [2, 1, 0]]
-        # folder = 'center/{}'.format(i)
-        # os.makedirs(folder, exist_ok=True)
-        # for j in range(32):
-        #     cv2.imwrite(os.path.join(folder, '{}.jpg'.format(j)), inputs[j])
+    # stats label distribution
+    # stats = [0] * 174
+    # for i in range(len(dataset)):
+    #     stats[dataset[i]] += 1
+    # print(stats)
+    # print(sum(stats))
+
+    # for i in range(5):
+    #     inputs, label = dataset[i]
+    #     inputs = inputs.numpy().transpose([1, 2, 3, 0])
+    #     inputs = (inputs + 1) / 2 * 255.0
+    #     inputs = inputs.astype(np.uint8)
+    #     inputs = inputs[:, :, :, [2, 1, 0]]
+    #     folder = 'center/{}'.format(i)
+    #     os.makedirs(folder, exist_ok=True)
+    #     for j in range(32):
+    #         cv2.imwrite(os.path.join(folder, '{}.jpg'.format(j)), inputs[j])
+
