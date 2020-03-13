@@ -25,7 +25,7 @@ from sthsth_dataset import SthSthDataset
 from utils import topk_corrects
 
 
-def main(mode, net, num_epochs, batch_size, lr, pretrained, num_workers, output_dir, save_prefix):
+def main(mode, net, num_epochs, batch_size, lr, optimizer_type, pretrained, num_workers, output_dir, save_prefix):
     weight_storage = os.path.join(output_dir, 'weights')
     log_storage = os.path.join(output_dir, 'logs')
     os.makedirs(weight_storage, exist_ok=True)
@@ -41,7 +41,7 @@ def main(mode, net, num_epochs, batch_size, lr, pretrained, num_workers, output_
     model = create_model(mode, net, pretrained)
 
     print('prepare optimizer...')
-    optimizer, scheduler = create_optimizer(model, lr)
+    optimizer, scheduler = create_optimizer(model, optimizer_type, lr)
 
     writer = SummaryWriter(log_storage)
 
@@ -98,8 +98,11 @@ def create_model(mode, net, pretrained=True, num_classes=174):
     return i3d
 
 
-def create_optimizer(model, lr, momentum=0.9):
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=0.0000001)
+def create_optimizer(model, optimizer_type, lr):
+    if optimizer_type == 'sgd':
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=1e-7)
+    else:
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-7)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [70])
     return optimizer, scheduler
 
@@ -212,6 +215,7 @@ if __name__ == '__main__':
     parser.add_argument('--epoch', type=int, default=80, help='num of epoch')
     parser.add_argument('--batch', type=int, default=4, help='num of batch')
     parser.add_argument('--lr', type=float, default=0.00125, help='learning rate')
+    parser.add_argument('--optimizer', type=str, default='sgd', choices=['sgd', 'adam'], help='optimizer')
     parser.add_argument('--pretrained', type=str2bool, default=True, help='if use pretrained model')
     parser.add_argument('--worker', type=int, default=4, help='num of workers')
     parser.add_argument('--output', type=str, default='output/sthsth_{}'.format(time.strftime('%m-%d_%H:%M:%S')), help='output dir')
@@ -224,6 +228,7 @@ if __name__ == '__main__':
          num_epochs=args.epoch,
          batch_size=args.batch,
          lr=args.lr,
+         optimizer_type=args.optimizer,
          pretrained=args.pretrained,
          num_workers=args.worker,
          output_dir=args.output,
